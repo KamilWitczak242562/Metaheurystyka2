@@ -47,36 +47,52 @@ def create_population(population_size, individual_size):
 
 def measuring_adaptation(individual: []):
     weight = 0
-    value = 0
-    for gene in individual:
+    for gene in range(len(individual)):
         bit = individual[gene]
         if bit == 1:
             weight = weight + items[gene][2]
-            value = value + items[gene][3]
     if weight > backpack_capacity:
         return 0
-    return weight, value
+    return weight
+
+
+def measuring_value(individual: []):
+    value = 0
+    for gene in range(len(individual)):
+        bit = individual[gene]
+        if bit == 1:
+            value = value + items[gene][3]
+    return value
 
 
 def adaptation_in_population(population):
     overall = 0
-    output = 0
     for individual in population:
-        overall, _ = overall + measuring_adaptation(individual)
+        overall = overall + measuring_adaptation(individual)
     for individual in population:
-        individual.append(output, _ = measuring_adaptation(individual) / overall)
+        individual.append(measuring_adaptation(individual) / overall)
+    return overall
 
 
 def roulette(population, chosen_amount):
-    adaptation_in_population(pop)
     compartments = []
-    sum = 0
-    for i in range(chosen_amount):
-        compartments.append([i, sum, sum + population[i][len(population[0])]])
-        sum = sum + population[i][len(population[0])]
-    rand = random.uniform(0, 1)
-    result = [compartment for compartment in compartments if compartment[1] < rand <= compartment[2]]
-    return result
+    total_fitness = sum(individual[-1] for individual in population)
+    sum_prob = 0
+
+    for i, individual in enumerate(population):
+        probability = individual[-1] / total_fitness
+        compartments.append([i, sum_prob, sum_prob + probability])
+        sum_prob += probability
+
+    selected = []
+    for _ in range(chosen_amount):
+        rand = random.uniform(0, 1)
+        for compartment in compartments:
+            if compartment[1] < rand <= compartment[2]:
+                selected.append(population[compartment[0]])
+                break
+
+    return selected
 
 
 def crossing_single_point(parent_a, parent_b, point):
@@ -89,32 +105,47 @@ def crossing_single_point(parent_a, parent_b, point):
     return children
 
 
-def mutation(individual, length):
-    index = random.randint(0, length)
+def mutation(individual):
+    index = random.randint(0, len(individual)-1)
     if individual[index] == 1:
         individual[index] = 0
     else:
         individual[index] = 1
 
-
-# def best_in_population(population):
-
+def best_in_population(population):
+    max_element = max(population, key=lambda x: x[-1])
+    return max_element
 
 
 if __name__ == '__main__':
     pop = create_population(10, 26)
+    print("Populacja pierwsza: ", len(pop))
     adaptation_in_population(pop)
     parents = roulette(pop, 5)
+    print("Rodzice: ", len(parents))
+    for kid in parents:
+        kid.pop()
     children = []
-    for i in parents:
-        for j in parents:
-            if i != j:
-                children.append(crossing_single_point(i, j, 12))
+    for parent_a in parents:
+        for parent_b in parents:
+            if parent_a != parent_b:
+                resulting_children = crossing_single_point(parent_a, parent_b, 12)
+                children.extend(resulting_children)
+    print("Dzieci: ", len(children))
     for kid in children:
-        if random.uniform(0, 1) > will_mutate:
-            mutation(kid, 25)
+        mutation(kid)
+    adaptation_in_population(children)
     new_pop = roulette(children, 10)
-    adaptation_in_population(new_pop)
+    print("Nowa populacja: ", len(new_pop))
+    kid = best_in_population(new_pop)
+    value = measuring_value(kid)
+    print(kid)
+    print(value)
+
+
+
+
+
 
 
 
