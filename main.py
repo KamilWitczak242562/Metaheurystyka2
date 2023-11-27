@@ -2,7 +2,7 @@ import random
 
 backpack_capacity = 6404180
 
-will_mutate = 0.5
+will_mutate = 0.03
 
 items = [
     [1, 'Toporek', 32252, 68674],
@@ -97,50 +97,87 @@ def roulette(population, chosen_amount):
 
 def crossing_single_point(parent_a, parent_b, point):
     children = []
-    kid_1 = parent_a[:point] + parent_b[point:]
+    kid_1 = parent_a[:point+1] + parent_b[point+1:]
     children.append(kid_1)
-
-    kid_2 = parent_b[:point] + parent_a[point:]
+    kid_2 = parent_b[:point+1] + parent_a[point+1:]
     children.append(kid_2)
     return children
 
 
 def mutation(individual):
     index = random.randint(0, len(individual)-1)
-    if individual[index] == 1:
-        individual[index] = 0
-    else:
-        individual[index] = 1
+    if random.random() < will_mutate:
+        if individual[index] == 1:
+            individual[index] = 0
+        else:
+            individual[index] = 1
+
 
 def best_in_population(population):
     max_element = max(population, key=lambda x: x[-1])
     return max_element
 
 
+def cut_from_population(population_size, population):
+    new_population = roulette(population, population_size)
+    return new_population
+
+
+def ag_roulette_single_point(population_size, generations_amount, parents_amount):
+    global_pop = create_population(population_size, 26)
+    best_kid = []
+    for generation in range(0, generations_amount):
+        adaptation_in_population(global_pop)
+        best_in_pop = best_in_population(global_pop)
+        if best_in_pop[:-1] > best_kid[:-1]:
+            best_kid = best_in_pop
+        parents = roulette(global_pop, parents_amount)
+        for kid in parents:
+            kid.pop()
+        for ind in global_pop:
+            ind.pop()
+        children = []
+        for parent_a in parents:
+            for parent_b in parents:
+                if parent_a != parent_b:
+                    resulting_children = crossing_single_point(parent_a, parent_b, 12)
+                    children.extend(resulting_children)
+        for kid in children:
+            mutation(kid)
+        global_pop.extend(children)
+        global_pop = cut_from_population(population_size, global_pop)
+    return best_kid
+
+
+# def ag_(population_size, generations_amount, parents_amount):
+#     global_pop = create_population(population_size, 26)
+#     best_kid = []
+#     for generation in range(0, generations_amount):
+#         adaptation_in_population(global_pop)
+#         best_in_pop = best_in_population(global_pop)
+#         if best_in_pop[:-1] > best_kid[:-1]:
+#             best_kid = best_in_pop
+#         parents = roulette(global_pop, parents_amount)
+#         for kid in parents:
+#             kid.pop()
+#         children = []
+#         for parent_a in parents:
+#             for parent_b in parents:
+#                 if parent_a != parent_b:
+#                     resulting_children = crossing_single_point(parent_a, parent_b, 12)
+#                     children.extend(resulting_children)
+#         for kid in children:
+#             mutation(kid)
+#         global_pop = parents + children
+#     return best_kid
+
+
 if __name__ == '__main__':
-    pop = create_population(10, 26)
-    print("Populacja pierwsza: ", len(pop))
-    adaptation_in_population(pop)
-    parents = roulette(pop, 5)
-    print("Rodzice: ", len(parents))
-    for kid in parents:
-        kid.pop()
-    children = []
-    for parent_a in parents:
-        for parent_b in parents:
-            if parent_a != parent_b:
-                resulting_children = crossing_single_point(parent_a, parent_b, 12)
-                children.extend(resulting_children)
-    print("Dzieci: ", len(children))
-    for kid in children:
-        mutation(kid)
-    adaptation_in_population(children)
-    new_pop = roulette(children, 10)
-    print("Nowa populacja: ", len(new_pop))
-    kid = best_in_population(new_pop)
-    value = measuring_value(kid)
-    print(kid)
-    print(value)
+    result = ag_roulette_single_point(1000, 20, 60)
+    value = measuring_value(result)
+    print("____________Wynik dla selekcji ruletki oraz krzyżowania jednopunktowego____________")
+    print("Najlepsze dziecko: ", result)
+    print("Wartość przedmiotów: ", value)
 
 
 
