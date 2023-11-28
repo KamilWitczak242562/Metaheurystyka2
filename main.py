@@ -57,9 +57,9 @@ class Individual:
     def mutate(self):
         index = random.randint(0, len(self.genes) - 1)
         if random.random() < will_mutate:
-            self.genes[index] = 1 - self.genes[index]  # Flipping the bit
-            self.adaptation = self.calculate_adaptation()  # Update adaptation after mutation
-            self.value = self.calculate_value()  # Update value after mutation
+            self.genes[index] = 1 - self.genes[index]  
+            self.adaptation = self.calculate_adaptation()  
+            self.value = self.calculate_value()  
 
     def __repr__(self):
         return f"Genes: {self.genes}, Adaptation: {self.adaptation}, Value: {self.value}"
