@@ -1,4 +1,5 @@
 import random
+import matplotlib.pyplot as plt
 
 backpack_capacity = 6404180
 
@@ -57,9 +58,9 @@ class Individual:
     def mutate(self):
         index = random.randint(0, len(self.genes) - 1)
         if random.random() < will_mutate:
-            self.genes[index] = 1 - self.genes[index]  
-            self.adaptation = self.calculate_adaptation()  
-            self.value = self.calculate_value()  
+            self.genes[index] = 1 - self.genes[index]
+            self.adaptation = self.calculate_adaptation()
+            self.value = self.calculate_value()
 
     def __repr__(self):
         return f"Genes: {self.genes}, Adaptation: {self.adaptation}, Value: {self.value}"
@@ -94,14 +95,46 @@ def roulette(population, chosen_amount):
 
     return selected
 
+def tournament_selection(population, parents_amount):
+    tmp_population = population.copy()
+    random.shuffle(tmp_population)
+    groups = []
+
+    increment = int(len(population)/parents_amount)
+    groups.append(tmp_population[:increment])
+
+    for i in range(1, parents_amount + 1):
+        if i == parents_amount + 1:
+            groups.append(tmp_population[i * increment:-1])
+        else:
+            groups.append(tmp_population[i*increment:(i+1)*increment])
+
+    parents = []
+
+    for group in groups:
+        kid = max(group, key=lambda x: x.adaptation)
+        parents.append(kid)
+
+    return parents
+
+def crossing_double_point(parent_a, parent_b, point1, point2 = 18):
+    genes_a = parent_a.genes
+    genes_b = parent_b.genes
+    children = []
+    kid_1 = Individual(genes_a[:point1] + genes_b[point1:point2] + genes_a[point2:])
+    children.append(kid_1)
+    kid_2 = Individual(genes_b[:point1] + genes_a[point1:point2] + genes_b[point2:])
+    children.append(kid_2)
+    return children
+
 
 def crossing_single_point(parent_a, parent_b, point):
     genes_a = parent_a.genes
     genes_b = parent_b.genes
     children = []
-    kid_1 = Individual(genes_a[:point+1] + genes_b[point+1:])
+    kid_1 = Individual(genes_a[:point] + genes_b[point:])
     children.append(kid_1)
-    kid_2 = Individual(genes_b[:point+1] + genes_a[point+1:])
+    kid_2 = Individual(genes_b[:point] + genes_a[point:])
     children.append(kid_2)
     return children
 
@@ -116,29 +149,51 @@ def cut_from_population(population_size, population):
     return new_population
 
 
-def ag_roulette_single_point(population_size, generations_amount, parents_amount):
+def ag(population_size, generations_amount, parents_amount, selection_func, crossing_func):
     global_pop = create_population(population_size, 26)
     best_kid = None
+    best_kids = []
     for generation in range(generations_amount):
         best_in_pop = best_in_population(global_pop)
+        best_kids.append(best_in_pop)
         if not best_kid or best_in_pop.adaptation > best_kid.adaptation:
             best_kid = best_in_pop
-        parents = roulette(global_pop, parents_amount)
+        parents = selection_func(global_pop, parents_amount)
         children = []
         for parent_a in parents:
             for parent_b in parents:
                 if parent_a != parent_b:
-                    resulting_children = crossing_single_point(parent_a, parent_b, 12)
+                    resulting_children = crossing_func(parent_a, parent_b, 8)
                     children.extend(resulting_children)
         for kid in children:
             kid.mutate()
         global_pop.extend(children)
         global_pop = cut_from_population(population_size, global_pop)
-    return best_kid
 
+    return best_kid, best_kids
 
 if __name__ == '__main__':
-    result = ag_roulette_single_point(5000, 30, 80)
+    result, best_kids1 = ag(5000, 50, 80, roulette, crossing_single_point)
+    result2, best_kids2 = ag(5000, 50, 80, tournament_selection, crossing_double_point)
     print("____________Wynik dla selekcji ruletki oraz krzyżowania jednopunktowego____________")
     print("Najlepsze dziecko: ", result)
     print("Wartość przedmiotów: ", result.value)
+
+    print("____________Wynik dla selekcji turniejowej oraz krzyżowania dwupunktowego____________")
+    print("Najlepsze dziecko: ", result2)
+    print("Wartość przedmiotów: ", result2.value)
+
+    # print(best_kids1)
+    # print([x.adaptation for x in best_kids1])
+
+    fig, ax = plt.subplots(2, 1, constrained_layout=True)
+    fig.set_size_inches(4, 8)
+    x1 = [x.adaptation for x in best_kids1]
+    x2 = [x.adaptation for x in best_kids2]
+    ax[0].plot(list(range(len(x1))), x1)
+    ax[0].set_title("selekcja ruletki oraz krzyżowanie jednopunktowe")
+    ax[0].grid(True)
+    ax[1].plot(list(range(len(x2))), x2)
+    ax[1].set_title("selekcja turniejowa oraz krzyżowanie dwupunktowe")
+    ax[1].grid(True)
+    plt.show()
