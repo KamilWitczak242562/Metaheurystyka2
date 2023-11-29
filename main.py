@@ -1,9 +1,10 @@
 import random
 import matplotlib.pyplot as plt
+from time import perf_counter
 
 backpack_capacity = 6404180
 
-will_mutate = 0.03
+will_mutate = 0.01
 
 items = [
     [1, 'Toporek', 32252, 68674],
@@ -95,6 +96,7 @@ def roulette(population, chosen_amount):
 
     return selected
 
+
 def tournament_selection(population, parents_amount):
     tmp_population = population.copy()
     random.shuffle(tmp_population)
@@ -117,7 +119,8 @@ def tournament_selection(population, parents_amount):
 
     return parents
 
-def crossing_double_point(parent_a, parent_b, point1, point2 = 18):
+
+def crossing_double_point(parent_a, parent_b, point1, point2=18):
     genes_a = parent_a.genes
     genes_b = parent_b.genes
     children = []
@@ -172,28 +175,62 @@ def ag(population_size, generations_amount, parents_amount, selection_func, cros
 
     return best_kid, best_kids
 
+
 if __name__ == '__main__':
-    result, best_kids1 = ag(5000, 50, 80, roulette, crossing_single_point)
-    result2, best_kids2 = ag(5000, 50, 80, tournament_selection, crossing_double_point)
+    ag1_start = perf_counter()
+    result, best_kids1 = ag(10000, 90, 110, roulette, crossing_single_point)
+    ag1_stop = perf_counter()
+    ag2_start = perf_counter()
+    result2, best_kids2 = ag(10000, 90, 110, tournament_selection, crossing_double_point)
+    ag2_stop = perf_counter()
     print("____________Wynik dla selekcji ruletki oraz krzyżowania jednopunktowego____________")
     print("Najlepsze dziecko: ", result)
     print("Wartość przedmiotów: ", result.value)
+    print("Czas wykonywania: ", ag1_stop - ag1_start)
 
     print("____________Wynik dla selekcji turniejowej oraz krzyżowania dwupunktowego____________")
     print("Najlepsze dziecko: ", result2)
     print("Wartość przedmiotów: ", result2.value)
+    print("Czas wykonywania: ", ag2_stop - ag2_start)
 
-    # print(best_kids1)
-    # print([x.adaptation for x in best_kids1])
-
-    fig, ax = plt.subplots(2, 1, constrained_layout=True)
-    fig.set_size_inches(4, 8)
+    fig, ax = plt.subplots(1, 2, constrained_layout=True)
+    fig.set_size_inches(8, 4)
+    fig.suptitle('Parametry:\npopulacja: 10000 | liczba generacji: 90 | liczba rodziców: 110')
     x1 = [x.adaptation for x in best_kids1]
     x2 = [x.adaptation for x in best_kids2]
     ax[0].plot(list(range(len(x1))), x1)
-    ax[0].set_title("selekcja ruletki oraz krzyżowanie jednopunktowe")
+    ax[0].set_title("selekcja ruletki\nkrzyżowanie jednopunktowe")
     ax[0].grid(True)
     ax[1].plot(list(range(len(x2))), x2)
-    ax[1].set_title("selekcja turniejowa oraz krzyżowanie dwupunktowe")
+    ax[1].set_title("selekcja turniejowa\nkrzyżowanie dwupunktowe")
+    ax[1].grid(True)
+    plt.show()
+
+    ag1_start = perf_counter()
+    result, best_kids1 = ag(10000, 90, 110, roulette, crossing_double_point)
+    ag1_stop = perf_counter()
+    ag2_start = perf_counter()
+    result2, best_kids2 = ag(10000, 90, 110, tournament_selection, crossing_single_point)
+    ag2_stop = perf_counter()
+    print("____________Wynik dla selekcji ruletki oraz krzyżowania dwupunktowego____________")
+    print("Najlepsze dziecko: ", result)
+    print("Wartość przedmiotów: ", result.value)
+    print("Czas wykonywania: ", ag1_stop - ag1_start)
+
+    print("____________Wynik dla selekcji turniejowej oraz krzyżowania jednopunktowego____________")
+    print("Najlepsze dziecko: ", result2)
+    print("Wartość przedmiotów: ", result2.value)
+    print("Czas wykonywania: ", ag2_stop - ag2_start)
+
+    fig, ax = plt.subplots(1, 2, constrained_layout=True)
+    fig.set_size_inches(8, 4)
+    fig.suptitle('Parametry:\npopulacja: 10000 | liczba generacji: 90 | liczba rodziców: 110')
+    x1 = [x.adaptation for x in best_kids1]
+    x2 = [x.adaptation for x in best_kids2]
+    ax[0].plot(list(range(len(x1))), x1)
+    ax[0].set_title("selekcja ruletki\nkrzyżowanie dwupunktowe")
+    ax[0].grid(True)
+    ax[1].plot(list(range(len(x2))), x2)
+    ax[1].set_title("selekcja turniejowa\nkrzyżowanie jednopunktowe")
     ax[1].grid(True)
     plt.show()
